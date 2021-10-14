@@ -6,12 +6,14 @@ import math
 
 data_path = sys.argv[1]
 
-print "data_path: ", data_path
+print("data_path: ", data_path)
+
 
 def preprocess(imgs):
     """add one more axis as tf require"""
     imgs = imgs[..., np.newaxis]
     return imgs
+
 
 def preprocess_front(imgs):
     imgs = imgs[np.newaxis, ...]
@@ -20,8 +22,11 @@ def preprocess_front(imgs):
 # returning the binary label map by the organ ID (especially useful under overlapping cases)
 #   label: the label matrix
 #   organ_ID: the organ ID
+
+
 def is_organ(label, organ_ID):
     return label == organ_ID
+
 
 def pad_2d(image, plane, padval, xmax, ymax, zmax):
     """pad image with zeros to reach dimension as (row_max, col_max)
@@ -40,10 +45,12 @@ def pad_2d(image, plane, padval, xmax, ymax, zmax):
 
     if plane == 'X':
         npad = ((0, ymax - image.shape[1]), (0, zmax - image.shape[2]))
-        padded = np.pad(image, pad_width=npad, mode='constant', constant_values = padval)
-    elif plane =='Z':
+        padded = np.pad(image, pad_width=npad, mode='constant',
+                        constant_values=padval)
+    elif plane == 'Z':
         npad = ((0, xmax - image.shape[0]), (0, ymax - image.shape[1]))
-        padded = np.pad(image, pad_width=npad, mode='constant', constant_values = padval)
+        padded = np.pad(image, pad_width=npad, mode='constant',
+                        constant_values=padval)
 
     return padded
 
@@ -56,8 +63,10 @@ def pad_2d(image, plane, padval, xmax, ymax, zmax):
 def in_training_set(total_samples, i, folds, current_fold):
     fold_remainder = folds - total_samples % folds
     fold_size = (total_samples - total_samples % folds) / folds
-    start_index = fold_size * current_fold + max(0, current_fold - fold_remainder)
-    end_index = fold_size * (current_fold + 1) + max(0, current_fold + 1 - fold_remainder)
+    start_index = fold_size * current_fold + \
+        max(0, current_fold - fold_remainder)
+    end_index = fold_size * (current_fold + 1) + \
+        max(0, current_fold + 1 - fold_remainder)
     return not (i >= start_index and i < end_index)
 
 
@@ -100,7 +109,8 @@ if not os.path.exists(list_path):
 
 list_training = {}
 for plane in ['Z']:
-    list_training[plane] = os.path.join(list_path, 'training_' + plane + '.txt')
+    list_training[plane] = os.path.join(
+        list_path, 'training_' + plane + '.txt')
 
 model_path = os.path.join(data_path, 'models')
 if not os.path.exists(model_path):

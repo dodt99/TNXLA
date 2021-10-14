@@ -41,20 +41,22 @@ init_lr = float(sys.argv[5])
 # ----- Dice Coefficient and cost function for training -----
 smooth = 1.
 
+
 def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return (2.0 * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+
 def dice_coef_loss(y_true, y_pred):
-    return  -dice_coef(y_true, y_pred)
+    return -dice_coef(y_true, y_pred)
 
 
 def get_unet((img_rows, img_cols), flt=64, pool_size=(2, 2, 2), init_lr=1.0e-5):
     """build and compile Neural Network"""
 
-    print "start building NN"
+    print("start building NN")
     inputs = Input((img_rows, img_cols, 1))
 
     conv1 = Conv2D(flt, (3, 3), activation='relu', padding='same')(inputs)
@@ -76,19 +78,23 @@ def get_unet((img_rows, img_cols), flt=64, pool_size=(2, 2, 2), init_lr=1.0e-5):
     conv5 = Conv2D(flt*16, (3, 3), activation='relu', padding='same')(pool4)
     conv5 = Conv2D(flt*8, (3, 3), activation='relu', padding='same')(conv5)
 
-    up6 = concatenate([Conv2DTranspose(flt*8, (2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=3)
+    up6 = concatenate([Conv2DTranspose(
+        flt*8, (2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=3)
     conv6 = Conv2D(flt*8, (3, 3), activation='relu', padding='same')(up6)
     conv6 = Conv2D(flt*4, (3, 3), activation='relu', padding='same')(conv6)
 
-    up7 = concatenate([Conv2DTranspose(flt*4, (2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=3)
+    up7 = concatenate([Conv2DTranspose(
+        flt*4, (2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=3)
     conv7 = Conv2D(flt*4, (3, 3), activation='relu', padding='same')(up7)
     conv7 = Conv2D(flt*2, (3, 3), activation='relu', padding='same')(conv7)
 
-    up8 = concatenate([Conv2DTranspose(flt*2, (2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=3)
+    up8 = concatenate([Conv2DTranspose(
+        flt*2, (2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=3)
     conv8 = Conv2D(flt*2, (3, 3), activation='relu', padding='same')(up8)
     conv8 = Conv2D(flt, (3, 3), activation='relu', padding='same')(conv8)
 
-    up9 = concatenate([Conv2DTranspose(flt, (2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=3)
+    up9 = concatenate([Conv2DTranspose(flt, (2, 2), strides=(
+        2, 2), padding='same')(conv8), conv1], axis=3)
     conv9 = Conv2D(flt, (3, 3), activation='relu', padding='same')(up9)
     conv9 = Conv2D(flt, (3, 3), activation='relu', padding='same')(conv9)
 
@@ -96,12 +102,13 @@ def get_unet((img_rows, img_cols), flt=64, pool_size=(2, 2, 2), init_lr=1.0e-5):
 
     model = Model(inputs=[inputs], outputs=[conv10])
 
-    model.compile(optimizer=Adam(lr=init_lr), loss=dice_coef_loss, metrics=[dice_coef])
+    model.compile(optimizer=Adam(lr=init_lr),
+                  loss=dice_coef_loss, metrics=[dice_coef])
 
     return model
 
 
-def train(fold, plane, batch_size, nb_epoch,init_lr):
+def train(fold, plane, batch_size, nb_epoch, init_lr):
     """
     train an Unet model with data from load_train_data()
 
@@ -123,13 +130,13 @@ def train(fold, plane, batch_size, nb_epoch,init_lr):
         initial learning rate
     """
 
-    print "number of epoch: ", nb_epoch
-    print "learning rate: ", init_lr
+    print("number of epoch: ", nb_epoch)
+    print("learning rate: ", init_lr)
 
     # --------------------- load and preprocess training data -----------------
-    print '-'*80
-    print '         Loading and preprocessing train data...'
-    print '-'*80
+    print('-'*80)
+    print('         Loading and preprocessing train data...')
+    print('-'*80)
 
     imgs_train, imgs_mask_train = load_train_data(fold, plane)
 
@@ -143,18 +150,19 @@ def train(fold, plane, batch_size, nb_epoch,init_lr):
     imgs_mask_train = imgs_mask_train.astype('float32')
 
     # ---------------------- Create, compile, and train model ------------------------
-    print '-'*80
-    print '		Creating and compiling model...'
-    print '-'*80
+    print('-'*80)
+    print('		Creating and compiling model...')
+    print('-'*80)
 
-    model = get_unet((imgs_row, imgs_col), pool_size=(2, 2, 2), init_lr=init_lr)
-    print model.summary()
+    model = get_unet((imgs_row, imgs_col),
+                     pool_size=(2, 2, 2), init_lr=init_lr)
+    print(model.summary)()
 
-    print '-'*80
-    print '		Fitting model...'
-    print '-'*80
+    print('-'*80)
+    print('		Fitting model...')
+    print('-'*80)
 
-    ver = 'unet_fd%s_%s_ep%s_lr%s.csv'%(cur_fold, plane, epoch, init_lr)
+    ver = 'unet_fd%s_%s_ep%s_lr%s.csv' % (cur_fold, plane, epoch, init_lr)
     csv_logger = CSVLogger(log_path + ver)
     model_checkpoint = ModelCheckpoint(model_path + ver + ".h5",
                                        monitor='loss',
@@ -162,7 +170,7 @@ def train(fold, plane, batch_size, nb_epoch,init_lr):
                                        period=10)
 
     history = model.fit(imgs_train, imgs_mask_train,
-                        batch_size= batch_size, epochs= nb_epoch, verbose=1, shuffle=True,
+                        batch_size=batch_size, epochs=nb_epoch, verbose=1, shuffle=True,
                         callbacks=[model_checkpoint, csv_logger])
 
 
@@ -170,4 +178,4 @@ if __name__ == "__main__":
 
     train(cur_fold, plane, batch_size, epoch, init_lr)
 
-    print "training done"
+    print("training done")

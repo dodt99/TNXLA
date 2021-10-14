@@ -23,43 +23,43 @@ folds = int(sys.argv[3])
 low_range = int(sys.argv[4])
 high_range = int(sys.argv[5])
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # get image list
     image_list = []
     image_filename = []
     keyword = ''
     for directory, _, file_ in os.walk(image_path):
-	for filename in sorted(file_):
-	    if keyword in filename:
-		image_list.append(os.path.join(directory, filename))
-		image_filename.append(os.path.splitext(filename)[0])
+        for filename in sorted(file_):
+            if keyword in filename:
+                image_list.append(os.path.join(directory, filename))
+                image_filename.append(os.path.splitext(filename)[0])
 
     # get label list
     label_list = []
     label_filename = []
     for directory, _, file_ in os.walk(label_path):
-	for filename in sorted(file_):
-	    if keyword in filename:
-		label_list.append(os.path.join(directory, filename))
-		label_filename.append(os.path.splitext(filename)[0])
+        for filename in sorted(file_):
+            if keyword in filename:
+                label_list.append(os.path.join(directory, filename))
+                label_filename.append(os.path.splitext(filename)[0])
 
     # check if #image equals #labels
     if len(image_list) != len(label_list):
-	exit('Error: the number of labels and the number of images are not equal!')
-
+        exit('Error: the number of labels and the number of images are not equal!')
 
     total_samples = len(image_list)
 
     for plane in ['Z']:
-    	output = open(list_training[plane], 'w')
-    	output.close()
+        output = open(list_training[plane], 'w')
+        output.close()
 
-    print 'Initialization starts.'
+    print('Initialization starts.')
 
 # iterate through all samples
 for i in range(total_samples):
     start_time = time.time()
-    print 'Processing ' + str(i + 1) + ' out of ' + str(len(image_list)) + ' files.'
+    print('Processing ' + str(i + 1) + ' out of ' +
+          str(len(image_list)) + ' files.')
 
     image = np.load(image_list[i])
     label = np.load(label_list[i])
@@ -77,25 +77,26 @@ for i in range(total_samples):
         if not os.path.exists(label_directory_):
             os.makedirs(label_directory_)
 
-        print '    Slicing data: ' + str(time.time() - start_time) + ' second(s) elapsed.'
+        print('    Slicing data: ' + str(time.time() -
+                                         start_time) + ' second(s) elapsed.')
         # for storing the total number of pixels of ground truth mask
-        sum_ = np.zeros((slice_number, organ_number + 1), dtype = np.int)
+        sum_ = np.zeros((slice_number, organ_number + 1), dtype=np.int)
         # for storing bounding boxes of ground truth masks (A_min, A_max, B_min, B_max)
-        minA = np.zeros((slice_number, organ_number + 1), dtype = np.int)
-        maxA = np.zeros((slice_number, organ_number + 1), dtype = np.int)
-        minB = np.zeros((slice_number, organ_number + 1), dtype = np.int)
-        maxB = np.zeros((slice_number, organ_number + 1), dtype = np.int)
+        minA = np.zeros((slice_number, organ_number + 1), dtype=np.int)
+        maxA = np.zeros((slice_number, organ_number + 1), dtype=np.int)
+        minB = np.zeros((slice_number, organ_number + 1), dtype=np.int)
+        maxB = np.zeros((slice_number, organ_number + 1), dtype=np.int)
         # for storing mean pixel value of each slice
-        average = np.zeros((slice_number), dtype = np.float)
+        average = np.zeros((slice_number), dtype=np.float)
 
         # iterate through all slices of current case i and current plane
         for j in range(0, slice_number):
             # image_filename_ sample dir: image_X /  0001  / 0001.npy
             #                              plane/ case num / slice num
-            image_filename_ = os.path.join( \
+            image_filename_ = os.path.join(
                 image_path_[plane], image_filename[i], '{:0>4}'.format(j) + '.npy')
 
-            label_filename_ = os.path.join( \
+            label_filename_ = os.path.join(
                 label_path_[plane], label_filename[i], '{:0>4}'.format(j) + '.npy')
 
             image_ = image[:, :, j]
@@ -111,7 +112,8 @@ for i in range(total_samples):
                 np.save(label_filename_, label_)
 
             # compute the mean value of the slice
-            average[j] = float(image_.sum()) / (image_.shape[0] * image_.shape[1])
+            average[j] = float(image_.sum()) / \
+                (image_.shape[0] * image_.shape[1])
 
             for o in range(1, organ_number + 1):
                 # this is the sum of pixel numbers of a ground truth mask
@@ -127,10 +129,10 @@ for i in range(total_samples):
 
         # iterate each slice of current case i
         for j in range(0, slice_number):
-            image_filename_ = os.path.join( \
+            image_filename_ = os.path.join(
                 image_path_[plane], image_filename[i], '{:0>4}'.format(j) + '.npy')
 
-            label_filename_ = os.path.join( \
+            label_filename_ = os.path.join(
                 label_path_[plane], label_filename[i], '{:0>4}'.format(j) + '.npy')
 
             # append the following output to training_X/Y/Z.txt
@@ -143,38 +145,40 @@ for i in range(total_samples):
             output.write(' ' + str(average[j]))
             # sum of ground truth pixels, and bounding box of gt mask (A_min, A_max, B_min, B_max)
             for o in range(1, organ_number + 1):
-                output.write(' ' + str(sum_[j, o]) + ' ' + str(minA[j, o]) + \
-                    ' ' + str(maxA[j, o]) + ' ' + str(minB[j, o]) + ' ' + str(maxB[j, o]))
+                output.write(' ' + str(sum_[j, o]) + ' ' + str(minA[j, o]) +
+                             ' ' + str(maxA[j, o]) + ' ' + str(minB[j, o]) + ' ' + str(maxB[j, o]))
 
             output.write('\n')
 
         output.close()
 
-        print '  ' + plane + ' plane is done: ' + \
-            str(time.time() - start_time) + ' second(s) elapsed.'
+        print('  ' + plane + ' plane is done: ' +
+              str(time.time() - start_time) + ' second(s) elapsed.')
 
-    print 'Processed ' + str(i + 1) + ' out of ' + str(len(image_list)) + ' files: ' + \
-        str(time.time() - start_time) + ' second(s) elapsed.'
+    print('Processed ' + str(i + 1) + ' out of ' + str(len(image_list)) + ' files: ' +
+          str(time.time() - start_time) + ' second(s) elapsed.')
 
 
 # create the 4 training image lists
-print 'Writing training image list.'
+print('Writing training image list.')
 for f in range(folds):
     list_training_ = training_set_filename(f)
     output = open(list_training_, 'w')
     for i in range(total_samples):
         if in_training_set(total_samples, i, folds, f):
-            output.write(str(i) + ' ' + image_list[i] + ' ' + label_list[i] + '\n')
+            output.write(str(i) + ' ' +
+                         image_list[i] + ' ' + label_list[i] + '\n')
     output.close()
 
 # create the 4 test image lists
-print 'Writing testing image list.'
+print('Writing testing image list.')
 for f in range(folds):
     list_testing_ = testing_set_filename(f)
     output = open(list_testing_, 'w')
     for i in range(total_samples):
         if not in_training_set(total_samples, i, folds, f):
-            output.write(str(i) + ' ' + image_list[i] + ' ' + label_list[i] + '\n')
+            output.write(str(i) + ' ' +
+                         image_list[i] + ' ' + label_list[i] + '\n')
     output.close()
 
-print 'Initialization is done.'
+print('Initialization is done.')

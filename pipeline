@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # directory of project folder
-DIR="/Users/yijun/panc"
+DIR="/home/oem/TNXLAYT/pancreas-seg"
 DATADIR="${DIR}/data"
 CODEDIR="${DIR}/repo"
 
@@ -29,13 +29,13 @@ vis=false
 
 # ---------------- programs -------------------
 # slice the 3d volumn to 2d slices
-python slice.py ${DATADIR} ${ORGAN_NUMBER} ${FOLDS} ${LOW_RANGE} ${HIGH_RANGE}
+python2 slice.py ${DATADIR} ${ORGAN_NUMBER} ${FOLDS} ${LOW_RANGE} ${HIGH_RANGE}
 
 # create data for training
-python data.py ${DATADIR} ${cur_fold} Z ${ZMAX} ${YMAX} ${XMAX} ${MARGIN} ${ORGAN_NUMBER} ${LOW_RANGE} ${HIGH_RANGE}
+python2 data.py ${DATADIR} ${cur_fold} Z ${ZMAX} ${YMAX} ${XMAX} ${MARGIN} ${ORGAN_NUMBER} ${LOW_RANGE} ${HIGH_RANGE}
 
 # train the model
-python unet.py ${DATADIR} ${cur_fold} Z ${epoch} ${init_lr}
+python2 unet.py ${DATADIR} ${cur_fold} Z ${epoch} ${init_lr}
 
 # test the model
-python testvis.py ${DATADIR} ${model_test} ${cur_fold} Z ${ZMAX} ${YMAX} ${XMAX} ${HIGH_RANGE} ${LOW_RANGE} ${MARGIN} ${vis}
+python2 testvis.py ${DATADIR} ${model_test} ${cur_fold} Z ${ZMAX} ${YMAX} ${XMAX} ${HIGH_RANGE} ${LOW_RANGE} ${MARGIN} ${vis}

@@ -18,7 +18,7 @@ from utils import *
 
 K.set_image_data_format('channels_last')  # Tensorflow dimension ordering
 
-data_path  = sys.argv[1] + "/"
+data_path = sys.argv[1] + "/"
 model_path = data_path + "models/"
 
 # dir for storing results that contains
@@ -38,7 +38,7 @@ margin = int(sys.argv[10])
 vis = sys.argv[11]
 
 # prediction of trained model
-pred_path = os.path.join(rst_path, "pred-%s/"%cur_fold)
+pred_path = os.path.join(rst_path, "pred-%s/" % cur_fold)
 if not os.path.exists(pred_path):
     os.makedirs(pred_path)
 
@@ -47,23 +47,27 @@ Dice Ceofficient and Cost functions for training
 """
 smooth = 1.
 
+
 def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return (2.0 * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+
 def dice_coef_loss(y_true, y_pred):
-    return  -dice_coef(y_true, y_pred)
+    return -dice_coef(y_true, y_pred)
 
 
 def test(model_to_test, current_fold, plane, rst_dir, vis):
-    print "-"*50
-    print "loading model ", model_to_test
-    print "-"*50
+    print("-"*50)
+    print("loading model ", model_to_test)
+    print("-"*50)
 
-    model = load_model(model_path + model_to_test + '.h5', custom_objects={'dice_coef_loss': dice_coef_loss, 'dice_coef':dice_coef})
-    volume_list = open(testing_set_filename(current_fold), 'r').read().splitlines()
+    model = load_model(model_path + model_to_test + '.h5', custom_objects={
+                       'dice_coef_loss': dice_coef_loss, 'dice_coef': dice_coef})
+    volume_list = open(testing_set_filename(
+        current_fold), 'r').read().splitlines()
     total = len(volume_list)
 
     dsc = np.zeros((total, 2))
@@ -75,12 +79,12 @@ def test(model_to_test, current_fold, plane, rst_dir, vis):
         label = np.load(s[2])
 
         case_num = s[1].split("00")[1].split(".")[0]
-        print "testing case: ", case_num
+        print("testing case: ", case_num)
 
         image_ = np.transpose(image, (2, 0, 1))
         label_ = np.transpose(label, (2, 0, 1))
 
-	    # standardize test data
+        # standardize test data
         image_[image_ < low_range] = low_range
         image_[image_ > high_range] = high_range
         image_ = (image_ - low_range) / float(high_range - low_range)
@@ -97,7 +101,7 @@ def test(model_to_test, current_fold, plane, rst_dir, vis):
                 arr = np.nonzero(label_[sli])
 
                 if len(arr[0]) == 0:
-        	        continue
+                    continue
 
                 minA = min(arr[0])
                 maxA = max(arr[0])
@@ -109,21 +113,25 @@ def test(model_to_test, current_fold, plane, rst_dir, vis):
                 minBdiff = margin
                 maxBdiff = margin
 
-                cropped = image_[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width), \
-                        max(minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)]
-                cropped_mask = label_[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width), \
-                        max(minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)]
+                cropped = image_[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width),
+                                 max(minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)]
+                cropped_mask = label_[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width),
+                                      max(minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)]
 
                 image_padded_ = pad_2d(cropped, plane, 0, im_x, im_y, im_z)
                 mask_padded_ = pad_2d(cropped_mask, plane, 0, im_x, im_y, im_z)
 
                 image_padded_prep = preprocess_front(preprocess(image_padded_))
 
-                out_ori = (model.predict(image_padded_prep) > 0.5).astype(np.uint8)
+                out_ori = (model.predict(image_padded_prep)
+                           > 0.5).astype(np.uint8)
 
-                out = out_ori[:,0:cropped.shape[0], 0:cropped.shape[1],:].reshape(cropped.shape)
-                pred[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width), max(minB - minBdiff, 0): min(maxB + maxBdiff+ 1, height)] = out
-                pred_vis = pred[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width), max(minB - minBdiff, 0): min(maxB + maxBdiff+ 1, height)]
+                out = out_ori[:, 0:cropped.shape[0],
+                              0:cropped.shape[1], :].reshape(cropped.shape)
+                pred[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width),
+                     max(minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)] = out
+                pred_vis = pred[sli, max(minA - minAdiff, 0): min(maxA + maxAdiff + 1, width), max(
+                    minB - minBdiff, 0): min(maxB + maxBdiff + 1, height)]
 
                 if vis == "true":
                     fig = plt.figure()
@@ -140,38 +148,40 @@ def test(model_to_test, current_fold, plane, rst_dir, vis):
                     ax.imshow(cropped_mask, cmap=plt.cm.gray)
 
                     # plt.suptitle("slice %s"%sli)
-                    fig.canvas.set_window_title("slice %s"%sli)
+                    fig.canvas.set_window_title("slice %s" % sli)
                     plt.axis('off')
                     plt.show()
 
             except KeyboardInterrupt:
-                print 'KeyboardInterrupt caught'
+                print('KeyboardInterrupt caught')
                 raise ValueError("terminate because of keyboard interruption")
 
         # ------------ write out for visualization ---------------
-        np.save(pred_path + case_num + ".npy", pred) # prediction made by the trained model
+        # prediction made by the trained model
+        np.save(pred_path + case_num + ".npy", pred)
 
-	    # compute DSC
+        # compute DSC
         cur_dsc, _, _, _ = DSC_computation(label_, pred)
-        print cur_dsc
+        print(cur_dsc)
 
         dsc[i][0] = case_num
         dsc[i][1] = cur_dsc
 
-    dsc_mean = np.mean(dsc[:,1])
-    dsc_std = np.std(dsc[:,1])
+    dsc_mean = np.mean(dsc[:, 1])
+    dsc_std = np.std(dsc[:, 1])
 
     # record test dsc mean and standard deviation for each fold in the one file
-    fd = open(rst_path + 'test_stats.csv','a+')
-    fd.write("%s,%s,%s,%s\n"%(cur_fold, model_to_test, dsc_mean, dsc_std))
+    fd = open(rst_path + 'test_stats.csv', 'a+')
+    fd.write("%s,%s,%s,%s\n" % (cur_fold, model_to_test, dsc_mean, dsc_std))
     fd.close()
 
-    print "---------------------------------"
-    print "mean: ", dsc_mean
-    print "std: ", dsc_std
+    print("---------------------------------")
+    print("mean: ", dsc_mean)
+    print("std: ", dsc_std)
 
     # record test result case by case
-    np.savetxt(rst_path + model_to_test + ".csv", dsc, fmt = "%i, %.5f", delimiter=",", header="case_num,DSC")
+    np.savetxt(rst_path + model_to_test + ".csv", dsc,
+               fmt="%i, %.5f", delimiter=",", header="case_num,DSC")
 
 
 if __name__ == "__main__":
@@ -180,4 +190,5 @@ if __name__ == "__main__":
 
     test(model_to_test, cur_fold, plane, rst_path, vis)
 
-    print "-----------test done, total time used: %s ------------"% (time.time() - start_time)
+    print("-----------test done, total time used: %s ------------" %
+          (time.time() - start_time))
